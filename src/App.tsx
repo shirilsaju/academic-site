@@ -268,11 +268,7 @@ function isHistoryReplaceSafe(): boolean {
     return "replaceState" in window.history;
   } catch { return false; }
 }
-function extractRating(text: string | null | undefined): number | null {
-  if (!text) return null;
-  const m = String(text).match(/([0-9]+(?:\.[0-9]+)?)\s*\/\s*5/);
-  return m ? parseFloat(m[1]) : null;
-}
+
 function extractHours(text: string | null | undefined): number | null {
   if (!text) return null;
   const m = String(text).match(/([0-9]+(?:\.[0-9]+)?)\s*hr\w*/i);
