@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import {
   Book, School, FileText, GraduationCap, Award, Briefcase, Newspaper, Users,
-  Wrench, Mail, Phone, Linkedin, Download, Link as LinkIcon, Home
+  Wrench, Mail, Phone, Linkedin, Download, Home
 } from "lucide-react";
 
 /* -------------------------
@@ -51,7 +51,7 @@ const data = {
   linkedin: "https://www.linkedin.com/in/shiril-saju-pom/",
   tagline: "Ph.D. Candidate in Production & Operations Management | IIM Bangalore",
   location: "Bengaluru, India",
-  photo: { src: "/portrait.jpg", alt: "Portrait of Shiril Saju" }, // put /public/portrait.jpg
+  photo: { src: "./portrait.jpg", alt: "Portrait of Shiril Saju" }, // relative for GH Pages
 
   researchInterests: ["Technology Adoption","Sustainability","Government Interventions","Innovation Ecosystems"],
   teachingInterests: [
@@ -259,11 +259,6 @@ const Section = ({ id, icon: Icon, title, children }: any) => (
   </section>
 );
 const Pill = ({ children }: any) => <span className="text-xs px-2 py-1 rounded-full border">{children}</span>;
-const LinkOut = ({ href, children }: any) => (
-  <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 underline underline-offset-2">
-    <LinkIcon className="h-3.5 w-3.5" /> {children}
-  </a>
-);
 
 // History safety check
 function isHistoryReplaceSafe(): boolean {
@@ -366,23 +361,6 @@ export default function AcademicSite() {
     address: { "@type": "PostalAddress", addressLocality: data.location },
   }), []);
 
-  const researchStats = useMemo(() => ({ ur: data.papersUnderReview.length, wip: data.workInProgress.length }), []);
-  const teachingStats = useMemo(() => {
-    const hours = [...data.teachingInstructor, ...data.teachingTA]
-      .map(t => extractHours((t as any).hours))
-      .filter((n): n is number => n!=null);
-    const totalHours = hours.reduce((a,b)=>a+b,0).toFixed(1);
-    return { totalHours };
-  }, []);
-
-  // sanity checks
-  if (typeof window !== "undefined") {
-    const href = window.location.href || "";
-    if (href.startsWith("about:")) console.assert(isHistoryReplaceSafe() === false, "[TEST] history unsafe in about:srcdoc");
-    console.assert(extractRating("4.77/5") === 4.77, "[TEST] rating decimal");
-    console.assert(extractHours("7.5 hrs (5 sessions)") === 7.5, "[TEST] hours decimal");
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-sky-50 text-gray-900">
       <style>{`
@@ -437,6 +415,7 @@ export default function AcademicSite() {
 
       {/* Pages */}
       <main className="mx-auto w-full max-w-[var(--maxw)] px-3 sm:px-4 py-6 sm:py-8 break-words">
+        {/* SUMMARY */}
         {page === "summary" && (
           <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-8">
             <div className="space-y-6">
@@ -452,24 +431,36 @@ export default function AcademicSite() {
                 </CardContent>
               </Card>
 
-              {/* UPDATED: 4 highlight tiles incl. teaching hours */}
+              {/* 4 highlights incl. total teaching hours */}
               <Card>
                 <CardHeader><CardTitle>Highlights</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <div className="text-3xl font-semibold">{researchStats.ur}</div>
+                    <div className="text-3xl font-semibold">{data.papersUnderReview.length}</div>
                     <div className="opacity-80">Papers under review / revision</div>
                   </div>
                   <div>
-                    <div className="text-3xl font-semibold">{researchStats.wip}</div>
+                    <div className="text-3xl font-semibold">{data.workInProgress.length}</div>
                     <div className="opacity-80">Works in progress</div>
                   </div>
                   <div>
                     <div className="text-3xl font-semibold">4.62</div>
-                    <div className="opacity-80">Avg. teaching rating / 5</div>
+                    <div className="opacity-80">Average rating / 5</div>
                   </div>
                   <div>
-                    <div className="text-3xl font-semibold">{teachingStats.totalHours}</div>
+                    <div className="text-3xl font-semibold">
+                      {
+                        (() => {
+                          const hours = [
+                            ...data.teachingInstructor.map((t) => extractHours(t.hours)),
+                            ...data.teachingTA.map((t) => extractHours(t.hours)),
+                          ].filter((n): n is number => n != null)
+                           .reduce((a,b)=>a+b,0)
+                           .toFixed(1);
+                          return hours;
+                        })()
+                      }
+                    </div>
                     <div className="opacity-80">Total teaching hours</div>
                   </div>
                 </CardContent>
@@ -508,7 +499,7 @@ export default function AcademicSite() {
               <div className="flex gap-2 no-print">
                 <Button className="w-full" onClick={() => setPage("contact")}>Get in touch</Button>
                 <a
-                  href="/CV_Shiril%20Saju.pdf"
+                  href="./CV_Shiril%20Saju.pdf"  // relative for GH Pages
                   download="CV_Shiril Saju.pdf"
                   className="w-full inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-50 h-10 sm:h-9 px-3 py-2 gap-2"
                   aria-label="Download CV (PDF)"
@@ -521,13 +512,14 @@ export default function AcademicSite() {
           </div>
         )}
 
+        {/* RESEARCH */}
         {page === "research" && (
           <div className="space-y-10">
             <Card>
               <CardHeader><CardTitle className="text-lg">Highlights</CardTitle></CardHeader>
               <CardContent className="grid sm:grid-cols-2 gap-4 text-sm">
-                <div><div className="text-3xl font-semibold">{researchStats.ur}</div><div className="opacity-80">Papers in review / revision</div></div>
-                <div><div className="text-3xl font-semibold">{researchStats.wip}</div><div className="opacity-80">Working papers</div></div>
+                <div><div className="text-3xl font-semibold">{data.papersUnderReview.length}</div><div className="opacity-80">Papers in review / revision</div></div>
+                <div><div className="text-3xl font-semibold">{data.workInProgress.length}</div><div className="opacity-80">Working papers</div></div>
               </CardContent>
             </Card>
 
@@ -619,6 +611,7 @@ export default function AcademicSite() {
           </div>
         )}
 
+        {/* EDUCATION */}
         {page === "education" && (
           <div className="space-y-10">
             <Section id="education" icon={GraduationCap} title="Education">
@@ -654,6 +647,7 @@ export default function AcademicSite() {
           </div>
         )}
 
+        {/* ACHIEVEMENTS */}
         {page === "achievements" && (
           <div className="space-y-10">
             <Section id="awards" icon={Award} title="Awards / Scholarships / Grants">
@@ -669,13 +663,26 @@ export default function AcademicSite() {
           </div>
         )}
 
+        {/* TEACHING */}
         {page === "teaching" && (
           <div className="space-y-10">
             <Card>
               <CardHeader><CardTitle>Highlights</CardTitle></CardHeader>
               <CardContent className="grid sm:grid-cols-2 gap-4 text-sm">
-                <div><div className="text-3xl font-semibold">{teachingStats.totalHours}</div><div className="opacity-80">Total teaching hours (incl. tutorials)</div></div>
-                <div><div className="text-3xl font-semibold">4.62</div><div className="opacity-80">Avg. teaching rating / 5</div></div>
+                <div><div className="text-3xl font-semibold">
+                  {
+                    (() => {
+                      const hours = [
+                        ...data.teachingInstructor.map((t) => extractHours(t.hours)),
+                        ...data.teachingTA.map((t) => extractHours(t.hours)),
+                      ].filter((n): n is number => n != null)
+                       .reduce((a,b)=>a+b,0)
+                       .toFixed(1);
+                      return hours;
+                    })()
+                  }
+                </div><div className="opacity-80">Total teaching hours (incl. tutorials)</div></div>
+                <div><div className="text-3xl font-semibold">4.62</div><div className="opacity-80">Average rating / 5</div></div>
               </CardContent>
             </Card>
 
@@ -727,6 +734,7 @@ export default function AcademicSite() {
           </div>
         )}
 
+        {/* EXPERIENCE */}
         {page === "experience" && (
           <div className="space-y-10">
             <Section id="industry" icon={Briefcase} title="Industry Experience">
@@ -745,6 +753,7 @@ export default function AcademicSite() {
           </div>
         )}
 
+        {/* SERVICE */}
         {page === "service" && (
           <div className="space-y-10">
             <Section id="service" icon={Users} title="Academic Service & Leadership">
@@ -761,6 +770,7 @@ export default function AcademicSite() {
           </div>
         )}
 
+        {/* REFERENCES */}
         {page === "references" && (
           <div className="space-y-10 max-w-4xl">
             <Section id="references" icon={Users} title="References">
@@ -778,6 +788,7 @@ export default function AcademicSite() {
           </div>
         )}
 
+        {/* CONTACT */}
         {page === "contact" && (
           <div className="space-y-10 max-w-3xl">
             <Section id="contact" icon={Mail} title="Contact">
