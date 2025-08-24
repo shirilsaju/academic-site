@@ -441,7 +441,7 @@ export default function AcademicSite() {
                   </div>
                   <div>
                     <div className="text-3xl font-semibold">4.62</div>
-                    <div className="opacity-80">Average rating / 5</div>
+                    <div className="opacity-80">Avg. teaching rating / 5</div>
                   </div>
                   <div>
                     <div className="text-3xl font-semibold">
@@ -678,7 +678,7 @@ export default function AcademicSite() {
                     })()
                   }
                 </div><div className="opacity-80">Total teaching hours (incl. tutorials)</div></div>
-                <div><div className="text-3xl font-semibold">4.62</div><div className="opacity-80">Average rating / 5</div></div>
+                <div><div className="text-3xl font-semibold">4.62</div><div className="opacity-80">Avg. teaching rating / 5</div></div>
               </CardContent>
             </Card>
 
