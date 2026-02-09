@@ -1,0 +1,551 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Queueing Simulation - G/G/s</title>
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  padding: 20px;
+  max-width: 900px;
+  margin: auto;
+  background-color: #f9f9f9;
+  color: #333;
+}
+h2 {
+  color: #2c3e50;
+  border-bottom: 2px solid #ccc;
+  padding-bottom: 5px;
+}
+label {
+  display: block;
+  margin-top: 15px;
+  font-weight: 600;
+}
+input[type="number"] {
+  width: 80px;
+  margin-left: 10px;
+  padding: 4px;
+}
+input[type="range"] {
+  margin-top: 4px;
+}
+button {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 18px;
+  font-size: 16px;
+  margin-top: 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+button:hover {
+  background-color: #0056b3;
+}
+.summary {
+  margin-top: 25px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+canvas {
+  width: 100%;
+  max-width: 900px;
+  height: 220px;
+  margin-top: 25px;
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.js"></script></head>
+<body><h1 style="font-family: Arial, sans-serif; text-align: center; margin-top: 20px;">Queueing Simulation – Foundations of Management, IIMB</h1>
+<h2>Strategic Service Optimization at McDonald's</h2>
+<div style="padding: 10px; background: #fff7d1; border: 1px solid #e0c56e; border-radius: 8px; margin-bottom: 20px;">
+<strong>Strategic Case Context:</strong><br/>
+        McDonald’s faces significant operational strain during peak hours in urban locations. Business leaders must balance throughput with service quality, optimizing both customer experience and labor efficiency.<br/><br/>
+<strong>Managerial Objective:</strong><br/>
+        This simulation helps explore the impact of:<ul>
+<li>Customer arrival rate and variability</li>
+<li>Service rate and variability</li>
+<li>Number of service counters</li>
+</ul>
+        on key performance metrics such as:<ul>
+<li>Customer waiting time (Wq)</li>
+<li>Queue length (Lq)</li>
+<li>System utilization (u)</li>
+</ul>
+        Use insights to design a leaner, more responsive front-of-house operation.
+        </div>
+<h2>Queueing Simulation</h2>
+<label>Arrival Rate (λ = 1 / a, per minute): <input id="lambda" step="0.01" style="width: 80px;" type="number" value="1.0"/><br/><input id="lambda_slider" max="10" min="0.1" oninput='document.getElementById("lambda").value = this.value; updateSummary();' step="0.01" style="width: 100%; margin-top: 4px;" type="range" value="1.0"/></label>
+<label>Interarrival Time (a, minutes): <input id="iat" step="0.01" style="width: 80px;" type="number" value="1.0"/><br/><input id="iat_slider" max="10" min="0.1" oninput='document.getElementById("iat").value = this.value; updateSummary();' step="0.01" style="width: 100%; margin-top: 4px;" type="range" value="1.0"/></label>
+<label>Service Rate (μ = 1 / p, per minute): <input id="mu" step="0.01" style="width: 80px;" type="number" value="1.2"/><br/><input id="mu_slider" max="10" min="0.1" oninput='document.getElementById("mu").value = this.value; updateSummary();' step="0.01" style="width: 100%; margin-top: 4px;" type="range" value="1.2"/></label>
+<label>Processing Time (p, minutes): <input id="pt" step="0.01" style="width: 80px;" type="number" value="0.83"/><br/><input id="pt_slider" max="10" min="0.1" oninput='document.getElementById("pt").value = this.value; updateSummary();' step="0.01" style="width: 100%; margin-top: 4px;" type="range" value="0.83"/></label>
+<label>Number of Servers (m): <input id="servers" step="1" style="width: 80px;" type="number" value="1"/><br/><input id="servers_slider" max="10" min="1" oninput='document.getElementById("servers").value = this.value; updateSummary();' step="1" style="width: 100%; margin-top: 4px;" type="range" value="1"/></label>
+<label>Arrival Variability (Ca): <input id="ca" step="0.1" style="width: 80px;" type="number" value="1.0"/><br/><input id="ca_slider" max="5" min="0.1" oninput='document.getElementById("ca").value = this.value; updateSummary();' step="0.1" style="width: 100%; margin-top: 4px;" type="range" value="1.0"/></label>
+<label>Processing Variability (Cp): <input id="cp" step="0.1" style="width: 80px;" type="number" value="1.0"/><br/><input id="cp_slider" max="5" min="0.1" oninput='document.getElementById("cp").value = this.value; updateSummary();' step="0.1" style="width: 100%; margin-top: 4px;" type="range" value="1.0"/></label>
+<label>Simulation Duration (hours): <input id="duration" step="1" style="width: 80px;" type="number" value="8"/><br/><input id="duration_slider" max="24" min="1" oninput='document.getElementById("duration").value = this.value; updateSummary();' step="1" style="width: 100%; margin-top: 4px;" type="range" value="8"/></label>
+<div class="summary">
+<p><strong>Utilization (u = p / (a × m)):</strong> <span id="rho">-</span></p>
+<p><strong>Status:</strong> <span id="status">-</span></p>
+<p><strong>Average Waiting Time (Wq, minutes):</strong> <span id="wq">-</span></p>
+<p><strong>Average Queue Length (Lq, customers):</strong> <span id="lq">-</span></p>
+</div>
+<button onclick="simulate()">Simulate</button>
+<br/>
+<canvas id="queueChart"></canvas>
+<script>
+    
+function gammaSample(mean, cv) {
+  const shape = 1 / (cv * cv);
+  const scale = mean / shape;
+
+  if (shape < 1) {
+    // Transformation for shape < 1
+    const u = Math.random();
+    return gammaSample(mean, cv) * Math.pow(u, 1 / shape);
+  }
+
+  // Marsaglia-Tsang method for shape >= 1
+  const d = shape - 1 / 3;
+  const c = 1 / Math.sqrt(9 * d);
+  while (true) {
+    let x = 0, v = 0;
+    do {
+      x = Math.random();
+      const z = (Math.random() * 2 - 1) * Math.sqrt(-2 * Math.log(x));
+      v = 1 + c * z;
+    } while (v <= 0);
+
+    v = v * v * v;
+    const u = Math.random();
+    if (u < 1 - 0.0331 * Math.pow(v, 2)) return d * v * scale;
+    if (Math.log(u) < 0.5 * Math.pow(v, 2) + d * (1 - v + Math.log(v))) return d * v * scale;
+  }
+}
+
+
+function normal(mean, stdDev) {
+      let u = 0, v = 0;
+      while (u === 0) u = Math.random();
+      while (v === 0) v = Math.random();
+      const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+      return Math.max(0.001, mean + z * stdDev);
+    }
+
+    function syncRates() {
+      const a = parseFloat(document.getElementById("iat").value);
+      const p = parseFloat(document.getElementById("pt").value);
+      document.getElementById("lambda").value = (1 / a).toFixed(3);
+      document.getElementById("mu").value = (1 / p).toFixed(3);
+      updateSummary();
+    }
+
+    function syncTimes() {
+      const lambda = parseFloat(document.getElementById("lambda").value);
+      const mu = parseFloat(document.getElementById("mu").value);
+      document.getElementById("iat").value = (1 / lambda).toFixed(3);
+      document.getElementById("pt").value = (1 / mu).toFixed(3);
+      updateSummary();
+    }
+
+    function updateSummary() {
+      const lambda = parseFloat(document.getElementById("lambda").value);
+      const mu = parseFloat(document.getElementById("mu").value);
+      const s = parseInt(document.getElementById("servers").value);
+      const ca = parseFloat(document.getElementById("ca").value);
+      const cp = parseFloat(document.getElementById("cp").value);
+      const rho = lambda / (s * mu);
+      document.getElementById("rho").textContent = rho.toFixed(2);
+      const statusEl = document.getElementById("status");
+      statusEl.textContent = rho >= 1 ? "Overloaded" : "Stable";
+      statusEl.style.color = rho >= 1 ? "red" : "green";
+
+      if (rho < 1) {
+        const Wq = ((ca ** 2 + cp ** 2) / 2) * ((rho ** Math.sqrt(2 * (s + 1))) / (s * mu * (1 - rho)));
+        const Lq = lambda * Wq;
+        document.getElementById("wq").textContent = Wq.toFixed(2);
+        document.getElementById("lq").textContent = Lq.toFixed(2);
+      } else {
+        document.getElementById("wq").textContent = "-";
+        document.getElementById("lq").textContent = "-";
+      }
+    }
+
+    function simulate() {
+      updateSummary();
+      const duration = parseFloat(document.getElementById("duration").value) * 60;
+      const lambda = parseFloat(document.getElementById("lambda").value);
+      const mu = parseFloat(document.getElementById("mu").value);
+      const s = parseInt(document.getElementById("servers").value);
+      const ca = parseFloat(document.getElementById("ca").value);
+      const cp = parseFloat(document.getElementById("cp").value);
+
+      const servers = new Array(s).fill(0);
+      const queue = [];
+      const timeline = [];
+      const queueLengths = [];
+
+      
+let time = 0;
+const events = [];
+while (time < duration) {
+  const a = 1 / lambda;
+  const interarrival = gammaSample(a, ca);
+  time += interarrival;
+  if (time <= duration) {
+    events.push({ time, type: "arrival" });
+  }
+}
+
+
+      let currentTime = 0;
+      let nextSample = 0;
+      while (events.length > 0 && currentTime < duration) {
+        events.sort((a, b) => a.time - b.time);
+        const event = events.shift();
+        currentTime = event.time;
+
+        if (event.type === "arrival") {
+          const free = servers.findIndex(t => t <= currentTime);
+          if (free !== -1) {
+            const done = currentTime + gammaSample(1 / mu, cp);
+            servers[free] = done;
+            events.push({ time: done, type: "departure", server: free });
+          } else {
+            queue.push(currentTime);
+          }
+        } else {
+          if (queue.length > 0) {
+            queue.shift();
+            const done = currentTime + gammaSample(1 / mu, cp);
+            servers[event.server] = done;
+            events.push({ time: done, type: "departure", server: event.server });
+          } else {
+            servers[event.server] = currentTime;
+          }
+        }
+
+        while (nextSample <= currentTime && nextSample <= duration) {
+          timeline.push((nextSample / 60).toFixed(2));
+          queueLengths.push(queue.length);
+          nextSample++;
+        }
+      }
+
+      const avgQueue = queueLengths.reduce((a, b) => a + b, 0) / queueLengths.length;
+      const avgLine = timeline.map(() => avgQueue);
+
+      const ctx = document.getElementById("queueChart").getContext("2d");
+      if (window.queueChart && typeof window.queueChart.destroy === 'function') window.queueChart.destroy();
+
+      window.queueChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: timeline,
+          datasets: [
+            {
+              label: 'Queue Length',
+              data: queueLengths,
+              borderColor: 'blue',
+              tension: 0.2,
+              fill: false
+            },
+            {
+              label: 'Average Queue Length',
+              data: avgLine,
+              borderColor: 'red',
+              borderDash: [5, 5],
+              borderWidth: 2,
+              pointRadius: 0,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: { title: { display: true, text: 'Time (hours)' }, ticks: { stepSize: 1 } },
+            y: { beginAtZero: true, title: { display: true, text: 'Queue Length (customers)' } }
+          }
+        }
+      });
+    }
+
+    window.onload = function () {
+      updateSummary();
+      syncTimes();
+      ["lambda", "mu"].forEach(id => {
+        document.getElementById(id).addEventListener("input", syncTimes);
+      });
+      ["iat", "pt"].forEach(id => {
+        document.getElementById(id).addEventListener("input", syncRates);
+      });
+      ["lambda", "mu", "servers", "ca", "cp"].forEach(id => {
+        document.getElementById(id).addEventListener("input", updateSummary);
+      });
+    };
+  </script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  function updateLinked(id, value) {
+    document.getElementById(id).value = value;
+    document.getElementById(id + "_slider").value = value;
+  }
+
+  function syncRates() {
+    const a = parseFloat(document.getElementById("iat").value);
+    const p = parseFloat(document.getElementById("pt").value);
+    const lambda = (1 / a).toFixed(3);
+    const mu = (1 / p).toFixed(3);
+    updateLinked("lambda", lambda);
+    updateLinked("mu", mu);
+    updateSummary();
+  }
+
+  function syncTimes() {
+    const lambda = parseFloat(document.getElementById("lambda").value);
+    const mu = parseFloat(document.getElementById("mu").value);
+    const a = (1 / lambda).toFixed(3);
+    const p = (1 / mu).toFixed(3);
+    updateLinked("iat", a);
+    updateLinked("pt", p);
+    updateSummary();
+  }
+
+  const linkMap = [
+    "lambda", "iat",
+    "mu", "pt"
+  ];
+
+  linkMap.forEach(id => {
+    document.getElementById(id).addEventListener("input", () => {
+      if (["lambda", "mu"].includes(id)) {
+        syncTimes();
+      } else {
+        syncRates();
+      }
+    });
+    document.getElementById(id + "_slider").addEventListener("input", function () {
+      document.getElementById(id).value = this.value;
+      if (["lambda", "mu"].includes(id)) {
+        syncTimes();
+      } else {
+        syncRates();
+      }
+    });
+  });
+});
+</script><script>
+document.addEventListener("DOMContentLoaded", function () {
+  const ids = ["lambda", "iat", "mu", "pt", "servers", "ca", "cp", "duration"];
+  ids.forEach(id => {
+    const input = document.getElementById(id);
+    const slider = document.getElementById(id + "_slider");
+    if (input && slider) {
+      input.addEventListener("input", () => {
+        slider.value = input.value;
+      });
+    }
+  });
+});
+</script>
+<script>
+    function markCorrect(btn) {
+      btn.style.backgroundColor = 'green';
+      btn.innerText = '✔ ' + btn.innerText;
+      btn.disabled = true;
+    }
+
+    function markWrong(hint) {
+      alert("❌ Try again: " + hint);
+    }
+    </script>
+<div style="margin-top: 30px;">
+<button onclick="toggleQuiz()" style="padding: 10px 15px; font-size: 16px;">🔽 Test Your Knowledge</button>
+</div>
+<div id="quiz-section" style="display: none; margin-top: 10px; padding: 15px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px;">
+<h3>Business Insights Quiz</h3>
+<div id="quiz-container"></div>
+</div>
+<script>
+const quizData = [
+  {
+    question: "1. During a surge in customer arrivals at McDonald’s, what strategic intervention best ensures service stability?",
+    correct: "Add service counters",
+    explanation: "Adding service counters increases system capacity, reducing utilization and wait times.",
+    options: {
+      "Add service counters": "Correct — increases capacity and reduces queues.",
+      "Reduce prices": "Incorrect — may increase demand and worsen the issue.",
+      "Limit menu items": "Incorrect — affects variability, not capacity directly.",
+      "Offer loyalty rewards": "Incorrect — this impacts long-term demand, not service throughput."
+    }
+  },
+  {
+    question: "2. If customer arrival patterns become more unpredictable (high Ca), what operational risk emerges?",
+    correct: "Queue volatility",
+    explanation: "High arrival variability causes uneven customer flow, leading to inconsistent queue lengths and delays.",
+    options: {
+      "Queue volatility": "Correct — high Ca leads to erratic queue build-up.",
+      "Overproduction": "Incorrect — McDonald’s uses make-to-order; overproduction is unlikely.",
+      "Understaffing": "Incorrect — Ca affects flow variability, not staffing.",
+      "Inventory loss": "Incorrect — not directly related to queueing variability."
+    }
+  },
+  {
+    question: "3. Utilization (u) > 1 implies what business implication?",
+    correct: "Customer churn due to long waits",
+    explanation: "Utilization over 1 means demand exceeds system capacity, causing delays and poor customer experience.",
+    options: {
+      "Customer churn due to long waits": "Correct — long wait times lead to dissatisfaction and potential churn.",
+      "Idle staff": "Incorrect — idle time is more likely when utilization is very low.",
+      "Efficient operations": "Incorrect — efficiency drops as queues grow and service delays occur.",
+      "Improved satisfaction": "Incorrect — longer queues hurt service experience."
+    }
+  },
+  {
+    question: "4. What process improvement will most reduce wait times without increasing labor cost?",
+    correct: "Introduce self-service kiosks",
+    explanation: "Self-service increases throughput without adding staff cost, balancing speed and efficiency.",
+    options: {
+      "Introduce self-service kiosks": "Correct — boosts service capacity without labor overhead.",
+      "Increase prices": "Incorrect — this may reduce demand, not solve queueing.",
+      "Reduce table size": "Incorrect — affects seating, not queueing.",
+      "Launch advertising campaign": "Incorrect — this increases traffic, not capacity."
+    }
+  },
+  {
+    question: "5. Which action would reduce the coefficient of variation in service time (Cp)?",
+    correct: "Eliminate customizations",
+    explanation: "Standardizing services reduces variability, improving predictability and throughput.",
+    options: {
+      "Eliminate customizations": "Correct — makes service times more uniform.",
+      "Add kitchen staff": "Incorrect — may help speed, but doesn't reduce variation.",
+      "Reduce arrival rate": "Incorrect — impacts queueing, not service variation.",
+      "Install more fryers": "Incorrect — capacity goes up, not predictability."
+    }
+  },
+  {
+    question: "6. What metric combo supports expanding counter capacity?",
+    correct: "High Wq, High Lq, High u",
+    explanation: "These metrics together indicate overload — the system can't handle current demand.",
+    options: {
+      "High Wq, High Lq, High u": "Correct — all signs point to needing more capacity.",
+      "Low Cp, Low Ca": "Incorrect — this indicates stable, efficient performance.",
+      "Stable Wq and Lq": "Incorrect — no stress, no reason to expand.",
+      "High menu diversity": "Incorrect — doesn't directly justify capacity expansion."
+    }
+  }
+];
+
+function shuffle(array) {
+  return array.sort(() => Math.random() - 0.5);
+}
+
+function toggleQuiz() {
+  const quizDiv = document.getElementById("quiz-section");
+  quizDiv.style.display = quizDiv.style.display === "none" ? "block" : "none";
+}
+
+function loadQuiz() {
+  const container = document.getElementById("quiz-container");
+  container.innerHTML = "";
+  quizData.forEach((q, idx) => {
+    const div = document.createElement("div");
+    div.style.marginBottom = "25px";
+    const qTitle = document.createElement("p");
+    qTitle.innerHTML = `<strong>${q.question}</strong>`;
+    div.appendChild(qTitle);
+
+    const options = Object.entries(q.options);
+    shuffle(options);
+
+    options.forEach(([opt, feedback]) => {
+      const btn = document.createElement("button");
+      btn.innerText = opt;
+      btn.style.marginRight = "8px";
+      btn.onclick = function () {
+        if (opt === q.correct) {
+          btn.style.backgroundColor = "green";
+          btn.innerText = "✔ " + btn.innerText;
+          btn.disabled = true;
+          const explanation = document.createElement("div");
+          explanation.style.marginTop = "10px";
+          explanation.style.padding = "10px";
+          explanation.style.border = "1px solid #ddd";
+          explanation.style.backgroundColor = "#eefcf1";
+          explanation.innerHTML = `<strong>Explanation:</strong><br>${q.explanation}<br><ul>` +
+            Object.entries(q.options).map(([k, v]) => `<li><strong>${k}</strong>: ${v}</li>`).join('') +
+            "</ul>";
+          div.appendChild(explanation);
+        } else {
+          alert("❌ Try again: Use the simulator to test how this factor impacts queues.");
+        }
+      };
+      div.appendChild(btn);
+    });
+
+    container.appendChild(div);
+  });
+}
+
+
+</script>
+<div style="text-align: center; font-size: 14px; margin-top: 50px; color: #555;">Prepared by: Shiril Saju, PhD Candidate, IIM Bangalore</div></body>
+</html>
+
+<script>
+
+window.onload = function () {
+  loadQuiz();
+  if (typeof updateSummary === "function") updateSummary();
+  if (typeof syncTimes === "function") syncTimes();
+
+  ["lambda", "mu"].forEach(id => {
+    document.getElementById(id).addEventListener("input", syncTimes);
+  });
+
+  ["iat", "pt"].forEach(id => {
+    document.getElementById(id).addEventListener("input", syncRates);
+  });
+
+  ["lambda", "mu", "servers", "ca", "cp"].forEach(id => {
+    document.getElementById(id).addEventListener("input", updateSummary);
+  });
+
+  const linkMap = ["lambda", "iat", "mu", "pt"];
+  linkMap.forEach(id => {
+    document.getElementById(id).addEventListener("input", () => {
+      if (["lambda", "mu"].includes(id)) {
+        syncTimes();
+      } else {
+        syncRates();
+      }
+    });
+    document.getElementById(id + "_slider").addEventListener("input", function () {
+      document.getElementById(id).value = this.value;
+      if (["lambda", "mu"].includes(id)) {
+        syncTimes();
+      } else {
+        syncRates();
+      }
+    });
+  });
+
+  const ids = ["lambda", "iat", "mu", "pt", "servers", "ca", "cp", "duration"];
+  ids.forEach(id => {
+    const input = document.getElementById(id);
+    const slider = document.getElementById(id + "_slider");
+    if (input && slider) {
+      input.addEventListener("input", () => {
+        slider.value = input.value;
+      });
+    }
+  });
+};
+
+</script>
